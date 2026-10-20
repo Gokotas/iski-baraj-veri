@@ -5,6 +5,18 @@ import { chromium } from 'playwright';
 import fs from 'node:fs';
 
 const URL = 'https://iski.istanbul/baraj-doluluk/';
+
+// Bağlantı testi: sunucu bu ağdan yanıt veriyor mu?
+for (const u of ['https://iski.istanbul/', 'https://www.google.com/']) {
+  const t0 = Date.now();
+  try {
+    const r = await fetch(u, { signal: AbortSignal.timeout(25000) });
+    console.log(`Bağlantı ${u}: HTTP ${r.status} (${Date.now() - t0} ms)`);
+  } catch (e) {
+    console.log(`Bağlantı ${u}: HATA ${e.name} ${e.message} (${Date.now() - t0} ms)`);
+  }
+}
+
 const tarayici = await chromium.launch();
 const sayfa = await tarayici.newPage({ locale: 'tr-TR', timezoneId: 'Europe/Istanbul' });
 const grafikVerisi = {};
@@ -14,9 +26,9 @@ sayfa.on('response', async (r) => {
   try { grafikVerisi[u.split('/api/iski/baraj/')[1]] = await r.json(); } catch { /* JSON değil */ }
 });
 
-await sayfa.goto(URL, { waitUntil: 'networkidle', timeout: 120000 });
+await sayfa.goto(URL, { waitUntil: 'domcontentloaded', timeout: 90000 });
 await sayfa.waitForFunction(() => /ORTALAMA BARAJ DOLULUK ORANI\s*[\d.,]+\s?%/i.test(document.body.innerText), null, { timeout: 90000 });
-await sayfa.waitForTimeout(8000); // geç yüklenen grafikler
+await sayfa.waitForTimeout(10000); // geç yüklenen grafikler
 const metin = await sayfa.evaluate(() => document.body.innerText);
 await tarayici.close();
 
