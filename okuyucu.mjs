@@ -1,20 +1,19 @@
 // İSKİ baraj doluluk sayfasını gerçek bir tarayıcıyla günde bir kez açar; ekranda görünen
 // genel oranı ve sayfanın yüklenirken kendisinin aldığı grafik verilerini kaydeder.
 // İSKİ'nin servisine bu betik ayrıca istek atmaz; yalnızca normal bir sayfa ziyareti yapılır.
+// Not (20.10.2026): İSKİ yurt dışı bağlantıları kabul etmiyor; GitHub sunucusundan erişilemezse
+// betik hata vermeden çıkar (gereksiz hata e-postası olmasın). Türkiye'den çalıştırıldığında okur.
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 
 const URL = 'https://iski.istanbul/baraj-doluluk/';
 
-// Bağlantı testi: sunucu bu ağdan yanıt veriyor mu?
-for (const u of ['https://iski.istanbul/', 'https://www.google.com/']) {
-  const t0 = Date.now();
-  try {
-    const r = await fetch(u, { signal: AbortSignal.timeout(25000) });
-    console.log(`Bağlantı ${u}: HTTP ${r.status} (${Date.now() - t0} ms)`);
-  } catch (e) {
-    console.log(`Bağlantı ${u}: HATA ${e.name} ${e.message} (${Date.now() - t0} ms)`);
-  }
+try {
+  const r = await fetch('https://iski.istanbul/', { signal: AbortSignal.timeout(25000) });
+  console.log(`İSKİ bağlantısı: HTTP ${r.status}`);
+} catch (e) {
+  console.log(`İSKİ bu ağdan erişilemiyor (${e.message}); okuma atlandı.`);
+  process.exit(0);
 }
 
 const tarayici = await chromium.launch();
