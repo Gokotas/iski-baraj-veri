@@ -1,0 +1,28 @@
+name: Günlük İSKİ baraj okuması
+on:
+  schedule:
+    - cron: '10 7 * * *'   # 10:10 TSİ (İSKİ genelde 09:25 civarı günceller)
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['okuyucu.mjs', '.github/workflows/gunluk.yml']
+permissions:
+  contents: write
+jobs:
+  oku:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install playwright@1.47.2 --no-save
+      - run: npx playwright install --with-deps chromium
+      - run: node okuyucu.mjs
+      - name: Kaydet
+        run: |
+          git config user.name "iski-baraj-veri"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add veri
+          git diff --cached --quiet || (git commit -m "Günlük okuma $(date -u +%F)" && git push)
